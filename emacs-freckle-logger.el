@@ -30,7 +30,8 @@ This way we don't have to request them each time, which is slow.")
   "Add project id and name to cache"
   (let ((id (cdr (assoc 'id project)))
         (name (cdr (assoc 'name project))))
-    (setq freckle-projects-cache (plist-put freckle-projects-cache name id))))
+    (setq freckle-projects-cache
+          (plist-put freckle-projects-cache name id))))
 
 (defun freckle-logger--get-projects ()
   (message "%S" freckle-personal-access-token)
