@@ -1,8 +1,14 @@
 ;;; -*- lexical-binding: t -*-
 ;;; emacs-freckle-logger.el --- freckle-logger
 
+;; Copyright (C) 2015 Michael Westbom
+
+;; Author: Michael Westbom <michael@agilionapps.com>
+;; Keywords: communication
+
 ;;; Commentary:
-;;
+
+;; Log freckle hours from emacs.  That's, so far, the long and short of it.
 
 ;;; Code:
 
