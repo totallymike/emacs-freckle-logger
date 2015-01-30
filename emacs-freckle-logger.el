@@ -21,7 +21,8 @@
   :link '(url-link "http://help.letsfreckle.com/import-export-api/api")
   :group 'freckle)
 
-(defvar freckle-projects-cache ()
+(defvar freckle-projects-cache
+  (make-hash-table :test 'equal )
   "The cache of projects, in the form of alists
 
 This way we don't have to request them each time, which is slow.")
@@ -30,8 +31,8 @@ This way we don't have to request them each time, which is slow.")
   "Add project id and name to cache"
   (let ((id (cdr (assoc 'id project)))
         (name (cdr (assoc 'name project))))
-    (setq freckle-projects-cache
-          (plist-put freckle-projects-cache name id))))
+    (message "%S" id name)
+    (puthash name id freckle-projects-cache)))
 
 (defun freckle-logger--get-projects ()
   (message "%S" freckle-personal-access-token)
@@ -45,11 +46,58 @@ This way we don't have to request them each time, which is slow.")
      :success (function*
                (lambda (&key data &allow-other-keys)
                  (dolist (project data)
-                   (cache-freckle-project project))))
+                   (freckle-logger--cache-freckle-project project))))
      :error (function*
              (lambda (&key data error-thrown &allow-other-keys)
+               (message "OH NO ERROR")
                (message "%S" error-thrown))))))
 
+(defun freckle-logger--fetch-project-id (project-id)
+  "Take project id from cache, prompting user if nil"
+  (or project-id
+      (let (project-name)
+        (setq project-name
+              (completing-read "Project: " freckle-projects-cache nil t))
+        (setq project-id (gethash project-name freckle-projects-cache)))))
+(message "%s" freckle-personal-access-token)
+
+(defun freckle-logger-start-timer (project-id)
+  "Sends a request to Freckle to start the timer for a given project"
+  (interactive "PProject Id: ")
+  (let ((project-id (freckle-logger--fetch-project-id project-id)))
+    (let* ((url-template "https://api.letsfreckle.com/v2/projects/%s/timer/start"))
+      (request
+       (format url-template project-id)
+       :type "PUT"
+       :headers `(("X-FreckleToken" . ,freckle-personal-access-token))
+       :parser (lambda ()
+                 (let ((json-array-type 'list))
+                   (json-read)))
+       :success (function*
+                 (lambda (&key data &allow-other-keys)
+                   (message "%s started" (cdr (assoc 'name (assoc 'project data))))))
+       :error (function*
+               (lambda (&key data error-thrown &allow-other-keys)
+                 (message "OH NO ERROR %s" error-thrown)))))))
+
+(defun freckle-logger-pause-timer (project-id)
+  "Sends a request to Freckle to start the timer for a given project"
+  (interactive "PProject Id: ")
+  (let ((project-id (freckle-logger--fetch-project-id project-id)))
+    (let* ((url-template "https://api.letsfreckle.com/v2/projects/%s/timer/pause"))
+      (request
+       (format url-template project-id)
+       :type "PUT"
+       :headers `(("X-FreckleToken" . ,freckle-personal-access-token))
+       :parser (lambda ()
+                 (let ((json-array-type 'list))
+                   (json-read)))
+       :success (function*
+                 (lambda (&key data &allow-other-keys)
+                   (message "%s started" (cdr (assoc 'name (assoc 'project data))))))
+       :error (function*
+               (lambda (&key data error-thrown &allow-other-keys)
+                 (message "OH NO ERROR %s" error-thrown)))))))
 
 (provide 'emacs-freckle-logger)
 
