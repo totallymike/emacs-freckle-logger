@@ -101,6 +101,10 @@ This way we don't have to request them each time, which is slow.")
      (success-fn #'freckle-logger--success-message)
      (error-fn #'freckle-logger--error-message)
      (verb "GET"))
+  "Make requests to the Freckle API
+
+This does little more than wrap the request function, adding the
+personal access token to the headers"
   (request url
            :type verb
            :headers `(("X-FreckleToken" . ,freckle-personal-access-token))
