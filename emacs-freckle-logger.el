@@ -53,10 +53,7 @@ This way we don't have to request them each time, which is slow.")
                (lambda (&key data &allow-other-keys)
                  (dolist (project data)
                    (freckle-logger--cache-freckle-project project))))
-     :error (function*
-             (lambda (&key data error-thrown &allow-other-keys)
-               (message "OH NO ERROR")
-               (message "%S" error-thrown))))))
+     :error #'freckle-logger--error-message)))
 
 (defun freckle-logger--fetch-project-id (project-id)
   "Take project id from cache, prompting user if nil"
@@ -67,10 +64,10 @@ This way we don't have to request them each time, which is slow.")
         (setq project-id (gethash project-name freckle-projects-cache)))))
 (message "%s" freckle-personal-access-token)
 
-(defun freckle-logger--error-message (&key error-thrown &allow-other-keys)
+(cl-defun freckle-logger--error-message (&key error-thrown &allow-other-keys)
   (message "OH NO ERROR" error-thrown))
 
-(defun freckle-logger--success-message (&key data &allow-other-keys)
+(cl-defun freckle-logger--success-message (&key data &allow-other-keys)
   (message "Success"))
 
 (defconst freckle-logger--freckle-api-url
@@ -87,31 +84,29 @@ This way we don't have to request them each time, which is slow.")
   (interactive "PProject Id: ")
   (let ((project-id (freckle-logger--fetch-project-id project-id)))
     (let* ((url (format freckle-logger--template--start-timer project-id)))
-      (freckle-logger--make-request url
-                                    #'freckle-logger--success-message
-                                    #'freckle-logger--error-message
-                                    "PUT"))))
+      (freckle-logger--make-request url :verb "PUT"))))
 
 (defun freckle-logger-pause-timer (project-id)
   "Sends a request to Freckle to start the timer for a given project"
   (interactive "PProject Id: ")
   (let ((project-id (freckle-logger--fetch-project-id project-id)))
     (let* ((url (format freckle-logger--template--pause-timer project-id)))
-      (freckle-logger--make-request url
-                                    #'freckle-logger--success-message
-                                    #'freckle-logger--error-message
-                                    "PUT"))))
+      (freckle-logger--make-request url :verb "PUT"))))
 
-(defun freckle-logger--make-request (url success-fn error-fn &optional verb)
-  (let ((verb (or verb "GET")))
-    (request url
-             :type verb
-             :headers `(("X-FreckleToken" . ,freckle-personal-access-token))
-             :parser (lambda ()
-                       (let ((json-array-type 'list))
-                         (json-read)))
-             :success success-fn
-             :error error-fn)))
+(cl-defun freckle-logger--make-request
+    (url
+     &key
+     (success-fn #'freckle-logger--success-message)
+     (error-fn #'freckle-logger--error-message)
+     (verb "GET"))
+  (request url
+           :type verb
+           :headers `(("X-FreckleToken" . ,freckle-personal-access-token))
+           :parser (lambda ()
+                     (let ((json-array-type 'list))
+                       (json-read)))
+           :success success-fn
+           :error error-fn))
 
 (provide 'emacs-freckle-logger)
 
