@@ -89,7 +89,7 @@ This way we don't have to request them each time, which is slow.")
       (freckle-logger--make-request url :verb "PUT"))))
 
 (defun freckle-logger-pause-timer (project-id)
-  "Sends a request to Freckle to start the timer for a given project"
+  "Sends a request to Freckle to pause the timer for a given project"
   (interactive "PProject Id: ")
   (let ((project-id (freckle-logger--fetch-project-id project-id)))
     (let* ((url (format freckle-logger--template--pause-timer project-id)))
