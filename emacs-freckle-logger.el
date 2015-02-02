@@ -70,28 +70,36 @@ This way we don't have to request them each time, which is slow.")
 (defun freckle-logger--error-message (&key error-thrown &allow-other-keys)
   (message "OH NO ERROR" error-thrown))
 
+(defun freckle-logger--success-message (&key data &allow-other-keys)
+  (message "Success"))
+
+(defconst freckle-logger--freckle-api-url
+  "https://api.letsfreckle.com/v2/")
+
+(defconst freckle-logger--template--pause-timer
+  (concat freckle-logger--freckle-api-url "projects/%s/timer/pause"))
+
+(defconst freckle-logger--template--start-timer
+  (concat freckle-logger--freckle-api-url "projects/%s/timer/start"))
+
 (defun freckle-logger-start-timer (project-id)
   "Sends a request to Freckle to start the timer for a given project"
   (interactive "PProject Id: ")
   (let ((project-id (freckle-logger--fetch-project-id project-id)))
-    (let* ((url-template "https://api.letsfreckle.com/v2/projects/%s/timer/start")
-           (url (format url-template project-id))
-           (success-fn (function*
-                        (lambda (&key data &allow-other-keys)
-                          (message "%s started" (assoc-default 'name (assoc 'project data)))))))
-      (freckle-logger--make-request url success-fn #'freckle-logger--error-message "PUT"))))
+    (let* ((url (format freckle-logger--template--start-timer project-id)))
+      (freckle-logger--make-request url
+                                    #'freckle-logger--success-message
+                                    #'freckle-logger--error-message
+                                    "PUT"))))
 
 (defun freckle-logger-pause-timer (project-id)
   "Sends a request to Freckle to start the timer for a given project"
   (interactive "PProject Id: ")
   (let ((project-id (freckle-logger--fetch-project-id project-id)))
-    (let* ((url-template "https://api.letsfreckle.com/v2/projects/%s/timer/pause")
-           (url (format url-template project-id))
-           (success-fn (function*
-                        (lambda (&key data &allow-other-keys)
-                          (message "%s paused" (assoc-default 'name (assoc 'project data)))))))
+    (let* ((url (format freckle-logger--template--pause-timer project-id)))
       (freckle-logger--make-request url
-                                    success-fn #'freckle-logger--error-message
+                                    #'freckle-logger--success-message
+                                    #'freckle-logger--error-message
                                     "PUT"))))
 
 (defun freckle-logger--make-request (url success-fn error-fn &optional verb)
